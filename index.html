@@ -1,52 +1,355 @@
-<!DOCTYPE html><html lang="fr">
+<!DOCTYPE html>
+<html lang="ht">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mon Site Web</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(120deg, #4facfe, #00f2fe);
-      color: #fff;
-      text-align: center;
-    }
-    header {
-      padding: 50px 20px;
-    }
-    h1 {
-      font-size: 40px;
-      margin-bottom: 10px;
-    }
-    p {
-      font-size: 18px;
-      opacity: 0.9;
-    }
-    .btn {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 25px;
-      background: #fff;
-      color: #333;
-      border-radius: 25px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    footer {
-      position: absolute;
-      bottom: 20px;
-      width: 100%;
-      font-size: 14px;
-      opacity: 0.8;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eroblack Air Strike</title>
+    <style>
+        body { margin: 0; background: #000b1a; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; text-align: center; }
+        canvas { display: block; background: #000; margin: 0 auto; }
+        #ui-top { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 10; pointer-events: none; }
+        .stat-box { background: rgba(0,0,0,0.8); padding: 10px; border-radius: 12px; border: 1px solid #00ffff; min-width: 90px; box-shadow: 0 0 10px rgba(0,255,255,0.2); }
+        .label { font-size: 10px; color: #00ffff; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .val { font-size: 20px; font-weight: bold; color: #fff; }
+        
+        #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .card { width: 85%; background: #111; border: 2px solid #f00; border-radius: 20px; padding: 25px; box-shadow: 0 0 20px #f00; max-height: 85vh; overflow-y: auto; }
+        input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #555; color: #0f0; text-align: center; font-size: 24px; border-radius: 10px; font-weight: bold; }
+        
+        .miz-buttons-container { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .btn-miz { flex: 1; min-width: 55px; padding: 10px 5px; background: #222; border: 1px solid #00ffff; color: #00ffff; font-weight: bold; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .btn-miz:active { background: #00ffff; color: #000; }
+
+        button.btn-lanse { width: 100%; padding: 18px; border-radius: 12px; border: none; font-weight: bold; font-size: 20px; cursor: pointer; background: linear-gradient(#f00, #900); color: #fff; text-transform: uppercase; margin-top: 10px; }
+        #fraz-miz { font-size: 14px; color: #ffff00; font-weight: bold; margin: 10px 0; letter-spacing: 0.5px; }
+        #dialogue-box { font-size: 13px; color: #ff00ff; font-style: italic; margin-bottom: 15px; min-height: 18px; font-weight: bold; }
+    </style>
 </head>
-<body>  <header>
-    <h1>Byenveni sou sit mwen</h1>
-    <p>Mwen kreye sit sa ak HTML + CSS</p>
-    <a class="btn" href="#">Klike la</a>
-  </header>  <footer>
-    © 2026 - Sit pèsonèl mwen
-  </footer></body>
+<body>
+
+    <div id="ui-top">
+        <div class="stat-box"><span class="label">TOUYE</span><span id="score" class="val">0</span>/100</div>
+        <div class="stat-box"><span class="label">RETE</span><span id="remain" class="val">105</span></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="modal">
+        <div class="card" id="modal-content">
+            <h2 style="color:#f00; margin-top:0; margin-bottom:5px;">EROBLACK STRIKE</h2>
+            <p style="margin-top:0; font-size:14px;">Touye 100 avion lènmi sou 105. Chak bezwen 7 bal!</p>
+            
+            <div id="dialogue-box">Kòmandan: "Chwazi yon miz pou n dekole misyon an!"</div>
+
+            <label style="font-size:12px; color:#888;">ANTRE MIZ OU (HTG)</label>
+            
+            <input type="number" id="edittextPeye" value="10" oninput="KalkileKòb()">
+            
+            <div class="miz-buttons-container">
+                <button class="btn-miz" onclick="ChwaziMiz(1)">1 HTG</button>
+                <button class="btn-miz" onclick="ChwaziMiz(5)">5 HTG</button>
+                <button class="btn-miz" onclick="ChwaziMiz(10)">10 HTG</button>
+                <button class="btn-miz" onclick="ChwaziMiz(15)">15 HTG</button>
+                <button class="btn-miz" onclick="ChwaziMiz(25)">25 HTG</button>
+            </div>
+            
+            <p id="fraz-miz">Ou mize 10 HTG, siw genyen wap fè 100 HTG!</p>
+            
+            <button class="btn-lanse" onclick="startGame()">LANCE MISYON</button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let enemiesCreated = 0;
+    let enemiesFinished = 0;
+    let gameActive = false;
+    let mizFinal = 0;
+    const TOTAL_ENEMIES = 105; 
+    const TARGET = 100;
+
+    let player = { x: canvas.width/2, y: canvas.height - 100 };
+    let bullets = [];
+    let enemies = [];
+    
+    let bgTexts = [];
+    for(let i=0; i<12; i++) {
+        bgTexts.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            s: 0.7 + Math.random() * 0.5
+        });
+    }
+
+    const dyalogMiz = [
+        'Kòmandan: "Bèl chwa! Avyon an pare pou konba."',
+        'Kòmandan: "Miz sa a lou! Pare pou w rache viktwa a."',
+        'Kòmandan: "Lènmi yo pap konprann anyen la! Ann al jwe."',
+        'Kòmandan: "Pilòt, estrateji sa a sanble bon. Parat tèt ou!"'
+    ];
+
+    const dyalogLanse = [
+        'Kòmandan: "Misyon lanse! Pa kite okenn avyon pase!"',
+        'Kòmandan: "Atak la kòmanse! Tire san gad dèyè!"'
+    ];
+
+    function BayDyalog(lis) {
+        let n = Math.floor(Math.random() * lis.length);
+        document.getElementById('dialogue-box').innerText = lis[n];
+    }
+
+    function ChwaziMiz(valè) {
+        document.getElementById('edittextPeye').value = valè;
+        KalkileKòb();
+        BayDyalog(dyalogMiz);
+    }
+
+    function KalkileKòb() {
+        let miz = document.getElementById('edittextPeye').value;
+        if(miz < 0 || miz === "") miz = 0;
+        let potansyel = miz * 10;
+        document.getElementById('fraz-miz').innerText = `Ou mize ${miz} HTG, siw genyen wap fè ${potansyel} HTG!`;
+    }
+
+    function sendToApp(bwat, val) {
+        if (window.Android) { window.Android.voyeKòb(bwat, val.toString()); }
+    }
+
+    function startGame() {
+        mizFinal = document.getElementById('edittextPeye').value;
+        if(mizFinal <= 0 || mizFinal === "") {
+            document.getElementById('dialogue-box').innerText = 'Kòmandan: "Antre yon miz valab anvan nou dekole!"';
+            return;
+        }
+        sendToApp("peye", mizFinal);
+        sendToApp("genyen", "0");
+        
+        BayDyalog(dyalogLanse);
+        
+        setTimeout(() => {
+            document.getElementById('modal').style.display = "none";
+            gameActive = true;
+            spawnEnemy();
+            update();
+        }, 600);
+    }
+
+    function spawnEnemy() {
+        if (!gameActive || enemiesCreated >= TOTAL_ENEMIES) return;
+        enemies.push({
+            x: Math.random() * (canvas.width - 60) + 30,
+            y: -60,
+            hp: 7,
+            speed: 0.8 + Math.random() * 0.7
+        });
+        enemiesCreated++;
+        document.getElementById('remain').innerText = (TOTAL_ENEMIES - enemiesCreated);
+        setTimeout(spawnEnemy, 1200);
+    }
+
+    setInterval(() => {
+        if (gameActive) {
+            bullets.push({ x: player.x - 12, y: player.y - 15, speed: 15 });
+            bullets.push({ x: player.x + 12, y: player.y - 15, speed: 15 });
+        }
+    }, 180);
+
+    window.addEventListener("touchmove", (e) => {
+        if(!gameActive) return;
+        let touch = e.touches[0];
+        player.x = touch.clientX;
+        player.y = touch.clientY;
+        e.preventDefault();
+    }, {passive: false});
+
+    // FONKSYON KI DESSINE BÈL AVYON YO
+    function drawFighter(x, y, isEnemy) {
+        ctx.save();
+        if(isEnemy) {
+            // DESSIN AVYON LÈNMI (WOUJ / NWA AGRESIF)
+            ctx.fillStyle = "#ff1a1a";
+            ctx.strokeStyle = "#4d0000";
+            ctx.lineWidth = 2;
+
+            // Kò Avyon an
+            ctx.beginPath();
+            ctx.moveTo(x, y + 25);
+            ctx.lineTo(x - 8, y - 10);
+            ctx.lineTo(x + 8, y - 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Zèl yo (Envèse)
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 28, y - 5);
+            ctx.lineTo(x - 8, y - 5);
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 28, y - 5);
+            ctx.lineTo(x + 8, y - 5);
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Kabin Lènmi
+            ctx.fillStyle = "#ffe6e6";
+            ctx.beginPath();
+            ctx.arc(x, y + 8, 4, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // DESSIN AVYON JWÈ A (BÈL AVYON DECHAST)
+            
+            // Dife nan motè (Dèyè)
+            let fireHeight = Math.random() * 12 + 8;
+            ctx.fillStyle = "#ff6600";
+            ctx.fillRect(x - 7, y + 15, 4, fireHeight);
+            ctx.fillRect(x + 3, y + 15, 4, fireHeight);
+            ctx.fillStyle = "#ffff00";
+            ctx.fillRect(x - 6, y + 15, 2, fireHeight - 4);
+            ctx.fillRect(x + 4, y + 15, 2, fireHeight - 4);
+
+            // Kò Avyon an (Gris ak Cyan fliyoresan)
+            ctx.fillStyle = "#3a4f66";
+            ctx.strokeStyle = "#00ffff";
+            ctx.lineWidth = 1.5;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y - 30); // Pwent devan
+            ctx.lineTo(x - 10, y + 15);
+            ctx.lineTo(x + 10, y + 15);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Gwo Zèl yo
+            ctx.fillStyle = "#253447";
+            ctx.beginPath();
+            ctx.moveTo(x - 8, y - 5);
+            ctx.lineTo(x - 32, y + 10);
+            ctx.lineTo(x - 8, y + 12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y - 5);
+            ctx.lineTo(x + 32, y + 10);
+            ctx.lineTo(x + 8, y + 12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Kabin pilòt la (Ble fliyoresan)
+            ctx.fillStyle = "#00ffff";
+            ctx.beginPath();
+            ctx.ellipse(x, y - 8, 4, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    function update() {
+        if (!gameActive) return;
+        ctx.fillStyle = "#000b1a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = "bold 22px Arial";
+        bgTexts.forEach(t => {
+            ctx.fillStyle = "rgba(0, 255, 255, 0.08)";
+            ctx.fillText("EROBLACK", t.x, t.y);
+            t.y += t.s;
+            if(t.y > canvas.height) { 
+                t.y = -30; 
+                t.x = Math.random() * (canvas.width - 50); 
+            }
+        });
+
+        drawFighter(player.x, player.y, false);
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.y -= b.speed;
+            
+            // Bèl efè lazè pou bal yo
+            ctx.fillStyle = "#ffff00";
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#ffff00";
+            ctx.fillRect(b.x - 2, b.y, 4, 15);
+            ctx.shadowBlur = 0; // Reyasiyen sou zero
+            
+            if (b.y < 0) bullets.splice(i, 1);
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let en = enemies[i];
+            en.y += en.speed;
+            drawFighter(en.x, en.y, true);
+            
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 13px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(en.hp, en.x, en.y - 15);
+
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                let b = bullets[j];
+                if (Math.abs(b.x - en.x) < 25 && Math.abs(b.y - en.y) < 25) {
+                    en.hp--;
+                    bullets.splice(j, 1);
+                    if (en.hp <= 0) {
+                        enemies.splice(i, 1);
+                        score++;
+                        enemiesFinished++;
+                        document.getElementById('score').innerText = score;
+                        checkFinish();
+                    }
+                    break;
+                }
+            }
+
+            if (en && en.y > canvas.height + 50) {
+                enemies.splice(i, 1);
+                enemiesFinished++;
+                checkFinish();
+            }
+
+            if (en && Math.abs(player.x - en.x) < 28 && Math.abs(player.y - en.y) < 28) {
+                gameOver();
+            }
+        }
+        requestAnimationFrame(update);
+    }
+
+    function checkFinish() {
+        if (enemiesFinished >= TOTAL_ENEMIES) gameOver();
+    }
+
+    function gameOver() {
+        gameActive = false;
+        let won = score >= TARGET;
+        let gain = won ? (mizFinal * 10) : 0;
+        sendToApp("genyen", gain);
+
+        let teksDyalog = won 
+            ? 'Kòmandan: "Ezekisyon pafè! Ou rache viktwa a epi ou sekirize kòb la!"' 
+            : 'Kòmandan: "Misyon echwe, yo te twòp pou nou! Al prepare w pou revanch lan."';
+
+        document.getElementById('modal').style.display = "flex";
+        document.getElementById('modal-content').innerHTML = `
+            <h1 style="color:${won ? '#0f0' : '#f00'}">${won ? 'MISYON REYISI!' : 'OU PÈDI!'}</h1>
+            <p style="font-size:13px; color:#ff00ff; font-style:italic; font-weight:bold; margin-bottom:15px;">${teksDyalog}</p>
+            <p>Ou detwi ${score} avyon sou ${TOTAL_ENEMIES}</p>
+            
+            <input type="text" id="edittextGenyen" value="${gain}" style="display:none;">
+            
+            <h2 style="background:#000; padding:15px; border-radius:10px; color:#fff; margin-top:5px;">GANY: ${gain} HTG</h2>
+            <button class="btn-lanse" onclick="location.reload()">REKÒMANSE</button>
+        `;
+    }
+</script>
+</body>
 </html>
