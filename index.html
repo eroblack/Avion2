@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eroblack Air Strike</title>
+    <title>Eroblack Air Strike - Multi Jets</title>
     <style>
         body { margin: 0; background: #000b1a; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; text-align: center; }
         canvas { display: block; background: #000; margin: 0 auto; }
@@ -12,6 +12,11 @@
         .label { font-size: 10px; color: #00ffff; display: block; text-transform: uppercase; letter-spacing: 1px; }
         .val { font-size: 20px; font-weight: bold; color: #fff; }
         
+        /* Bwat seleksyon avyon pandan jwèt la ap jwe */
+        #hangar-ui { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 380px; background: rgba(0, 11, 26, 0.85); padding: 8px; border-radius: 15px; border: 1.5px solid #00ffff; display: none; justify-content: space-between; gap: 5px; box-shadow: 0 0 15px rgba(0, 255, 255, 0.3); z-index: 100; }
+        .jet-select-btn { flex: 1; padding: 6px 2px; font-size: 9px; font-weight: bold; background: #041a3c; color: #fff; border: 1px solid #00aaff; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .jet-select-btn.active { background: #00ffff; color: #000; border-color: #fff; box-shadow: 0 0 8px #00ffff; }
+
         #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .card { width: 85%; background: #111; border: 2px solid #f00; border-radius: 20px; padding: 25px; box-shadow: 0 0 20px #f00; max-height: 85vh; overflow-y: auto; }
         input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #555; color: #0f0; text-align: center; font-size: 24px; border-radius: 10px; font-weight: bold; }
@@ -32,17 +37,25 @@
         <div class="stat-box"><span class="label">RETE</span><span id="remain" class="val">105</span></div>
     </div>
 
+    <!-- Hangar pou chanje avyon an dirèk nan misyon an -->
+    <div id="hangar-ui">
+        <button id="btn-jet1" class="jet-select-btn active" onclick="chanjeAvyon(1)">Jet 1<br>(1 Bal)</button>
+        <button id="btn-jet2" class="jet-select-btn" onclick="chanjeAvyon(2)">Jet 2<br>(2 Bal)</button>
+        <button id="btn-jet3" class="jet-select-btn" onclick="chanjeAvyon(3)">Jet 3<br>(3 Bal)</button>
+        <button id="btn-jet4" class="jet-select-btn" onclick="chanjeAvyon(4)">Jet 4<br>(4 Bal)</button>
+        <button id="btn-jet5" class="jet-select-btn" onclick="chanjeAvyon(5)">Jet 5<br>(5 Bal)</button>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
 
     <div id="modal">
         <div class="card" id="modal-content">
             <h2 style="color:#f00; margin-top:0; margin-bottom:5px;">EROBLACK STRIKE</h2>
-            <p style="margin-top:0; font-size:14px;">Touye 100 avion lènmi sou 105. Chak bezwen 7 bal!</p>
+            <p style="margin-top:0; font-size:13px;">Touye 100 lènmi sou 105. Ou ka chanje avyon anndan misyon an!</p>
             
             <div id="dialogue-box">Kòmandan: "Chwazi yon miz pou n dekole misyon an!"</div>
 
             <label style="font-size:12px; color:#888;">ANTRE MIZ OU (HTG)</label>
-            
             <input type="number" id="edittextPeye" value="10" oninput="KalkileKòb()">
             
             <div class="miz-buttons-container">
@@ -54,7 +67,6 @@
             </div>
             
             <p id="fraz-miz">Ou mize 10 HTG, siw genyen wap fè 100 HTG!</p>
-            
             <button class="btn-lanse" onclick="startGame()">LANCE MISYON</button>
         </div>
     </div>
@@ -73,7 +85,10 @@
     const TOTAL_ENEMIES = 105; 
     const TARGET = 100;
 
-    let player = { x: canvas.width/2, y: canvas.height - 100 };
+    // Kalite Avyon ak nivo zam yo
+    let tipAvyon = 1; 
+
+    let player = { x: canvas.width/2, y: canvas.height - 150 };
     let bullets = [];
     let enemies = [];
     
@@ -93,20 +108,11 @@
         'Kòmandan: "Pilòt, estrateji sa a sanble bon. Parat tèt ou!"'
     ];
 
-    const dyalogLanse = [
-        'Kòmandan: "Misyon lanse! Pa kite okenn avyon pase!"',
-        'Kòmandan: "Atak la kòmanse! Tire san gad dèyè!"'
-    ];
-
-    function BayDyalog(lis) {
-        let n = Math.floor(Math.random() * lis.length);
-        document.getElementById('dialogue-box').innerText = lis[n];
-    }
-
     function ChwaziMiz(valè) {
         document.getElementById('edittextPeye').value = valè;
         KalkileKòb();
-        BayDyalog(dyalogMiz);
+        let n = Math.floor(Math.random() * dyalogMiz.length);
+        document.getElementById('dialogue-box').innerText = dyalogMiz[n];
     }
 
     function KalkileKòb() {
@@ -120,6 +126,17 @@
         if (window.Android) { window.Android.voyeKòb(bwat, val.toString()); }
     }
 
+    // Sistèm pou chanje kalite avyon an dirèk
+    function chanjeAvyon(nimewo) {
+        tipAvyon = nimewo;
+        
+        // Mete klas active sou bouton an
+        for(let i=1; i<=5; i++) {
+            document.getElementById(`btn-jet${i}`).classList.remove('active');
+        }
+        document.getElementById(`btn-jet${nimewo}`).classList.add('active');
+    }
+
     function startGame() {
         mizFinal = document.getElementById('edittextPeye').value;
         if(mizFinal <= 0 || mizFinal === "") {
@@ -129,35 +146,66 @@
         sendToApp("peye", mizFinal);
         sendToApp("genyen", "0");
         
-        BayDyalog(dyalogLanse);
-        
-        setTimeout(() => {
-            document.getElementById('modal').style.display = "none";
-            gameActive = true;
-            spawnEnemy();
-            update();
-        }, 600);
+        document.getElementById('modal').style.display = "none";
+        document.getElementById('hangar-ui').style.display = "flex"; // Afiche hangar a
+        gameActive = true;
+        spawnEnemy();
+        update();
     }
 
     function spawnEnemy() {
         if (!gameActive || enemiesCreated >= TOTAL_ENEMIES) return;
+        
+        // HP lènmi an kalkile otomatikman selon avyon ki chwazi a (1 bal = 7hp, 2 bal = 14hp, elatriye)
+        let lènmiHP = tipAvyon * 7; 
+
         enemies.push({
             x: Math.random() * (canvas.width - 60) + 30,
             y: -60,
-            hp: 7,
-            speed: 0.8 + Math.random() * 0.7
+            hp: lènmiHP,
+            maxHp: lènmiHP,
+            speed: 0.8 + Math.random() * 0.6
         });
         enemiesCreated++;
         document.getElementById('remain').innerText = (TOTAL_ENEMIES - enemiesCreated);
-        setTimeout(spawnEnemy, 1200);
+        setTimeout(spawnEnemy, 1300);
     }
 
+    // Cadence Tirer bal yo selon avyon an
     setInterval(() => {
-        if (gameActive) {
+        if (!gameActive) return;
+
+        if (tipAvyon === 1) {
+            // 1 Bal santral
+            bullets.push({ x: player.x, y: player.y - 20, speed: 15 });
+        } 
+        else if (tipAvyon === 2) {
+            // 2 Bal paralèl
             bullets.push({ x: player.x - 12, y: player.y - 15, speed: 15 });
             bullets.push({ x: player.x + 12, y: player.y - 15, speed: 15 });
+        } 
+        else if (tipAvyon === 3) {
+            // 3 Bal (Santral + Vole sou kote)
+            bullets.push({ x: player.x, y: player.y - 20, speed: 15 });
+            bullets.push({ x: player.x - 18, y: player.y - 10, speed: 15 });
+            bullets.push({ x: player.x + 18, y: player.y - 10, speed: 15 });
+        } 
+        else if (tipAvyon === 4) {
+            // 4 Gwo Bal gaye
+            bullets.push({ x: player.x - 22, y: player.y, speed: 16 });
+            bullets.push({ x: player.x - 8, y: player.y - 20, speed: 16 });
+            bullets.push({ x: player.x + 8, y: player.y - 20, speed: 16 });
+            bullets.push({ x: player.x + 22, y: player.y, speed: 16 });
         }
-    }, 180);
+        else if (tipAvyon === 5) {
+            // 5 Bal - Siprèm destriksyon
+            bullets.push({ x: player.x, y: player.y - 25, speed: 17 });
+            bullets.push({ x: player.x - 14, y: player.y - 15, speed: 17 });
+            bullets.push({ x: player.x + 14, y: player.y - 15, speed: 17 });
+            bullets.push({ x: player.x - 28, y: player.y, speed: 17 });
+            bullets.push({ x: player.x + 28, y: player.y, speed: 17 });
+        }
+    }, 190);
 
     window.addEventListener("touchmove", (e) => {
         if(!gameActive) return;
@@ -167,89 +215,72 @@
         e.preventDefault();
     }, {passive: false});
 
-    // FONKSYON KI DESSINE BÈL AVYON YO
-    function drawFighter(x, y, isEnemy) {
+    // Vizyèl diferan pou 5 bèl avyon yo
+    function drawPlayerJet(x, y, tip) {
         ctx.save();
-        if(isEnemy) {
-            // DESSIN AVYON LÈNMI (WOUJ / NWA AGRESIF)
-            ctx.fillStyle = "#ff1a1a";
-            ctx.strokeStyle = "#4d0000";
-            ctx.lineWidth = 2;
+        
+        // Dife nan motè anba
+        let fireH = Math.random() * 14 + 8;
+        ctx.fillStyle = tip % 2 === 0 ? "#00ffff" : "#ff6600";
+        ctx.fillRect(x - 5, y + 15, 3, fireH);
+        ctx.fillRect(x + 2, y + 15, 3, fireH);
 
-            // Kò Avyon an
-            ctx.beginPath();
-            ctx.moveTo(x, y + 25);
-            ctx.lineTo(x - 8, y - 10);
-            ctx.lineTo(x + 8, y - 10);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+        ctx.lineWidth = 2;
 
-            // Zèl yo (Envèse)
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - 28, y - 5);
-            ctx.lineTo(x - 8, y - 5);
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + 28, y - 5);
-            ctx.lineTo(x + 8, y - 5);
-            ctx.lineWidth = 4;
-            ctx.stroke();
-
-            // Kabin Lènmi
-            ctx.fillStyle = "#ffe6e6";
-            ctx.beginPath();
-            ctx.arc(x, y + 8, 4, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            // DESSIN AVYON JWÈ A (BÈL AVYON DECHAST)
-            
-            // Dife nan motè (Dèyè)
-            let fireHeight = Math.random() * 12 + 8;
-            ctx.fillStyle = "#ff6600";
-            ctx.fillRect(x - 7, y + 15, 4, fireHeight);
-            ctx.fillRect(x + 3, y + 15, 4, fireHeight);
-            ctx.fillStyle = "#ffff00";
-            ctx.fillRect(x - 6, y + 15, 2, fireHeight - 4);
-            ctx.fillRect(x + 4, y + 15, 2, fireHeight - 4);
-
-            // Kò Avyon an (Gris ak Cyan fliyoresan)
-            ctx.fillStyle = "#3a4f66";
-            ctx.strokeStyle = "#00ffff";
-            ctx.lineWidth = 1.5;
-            
-            ctx.beginPath();
-            ctx.moveTo(x, y - 30); // Pwent devan
-            ctx.lineTo(x - 10, y + 15);
-            ctx.lineTo(x + 10, y + 15);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Gwo Zèl yo
-            ctx.fillStyle = "#253447";
-            ctx.beginPath();
-            ctx.moveTo(x - 8, y - 5);
-            ctx.lineTo(x - 32, y + 10);
-            ctx.lineTo(x - 8, y + 12);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(x + 8, y - 5);
-            ctx.lineTo(x + 32, y + 10);
-            ctx.lineTo(x + 8, y + 12);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // Kabin pilòt la (Ble fliyoresan)
-            ctx.fillStyle = "#00ffff";
-            ctx.beginPath();
-            ctx.ellipse(x, y - 8, 4, 10, 0, 0, Math.PI * 2);
-            ctx.fill();
+        if (tip === 1) {
+            // Jet Standard (Ble Aliminyòm)
+            ctx.fillStyle = "#4a6984"; ctx.strokeStyle = "#00ffff";
+            ctx.beginPath(); ctx.moveTo(x, y - 25); ctx.lineTo(x - 22, y + 12); ctx.lineTo(x + 22, y + 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+        } 
+        else if (tip === 2) {
+            // Jet Kanno Doub (Gris metal ak doub pwent)
+            ctx.fillStyle = "#616161"; ctx.strokeStyle = "#00ff66";
+            ctx.beginPath(); ctx.moveTo(x - 6, y - 28); ctx.lineTo(x - 12, y + 15); ctx.lineTo(x + 12, y + 15); ctx.lineTo(x + 6, y - 28); ctx.closePath(); ctx.fill(); ctx.stroke();
+            // Zèl laj
+            ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x - 30, y + 10); ctx.lineTo(x + 30, y + 10); ctx.lineTo(x + 10, y); ctx.stroke();
+        } 
+        else if (tip === 3) {
+            // Jet Triplo (Koulè Or / Jòn Avangard)
+            ctx.fillStyle = "#cca300"; ctx.strokeStyle = "#ffffff";
+            ctx.beginPath(); ctx.moveTo(x, y - 30); ctx.lineTo(x - 28, y + 8); ctx.lineTo(x, y + 2); ctx.lineTo(x + 28, y + 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+        } 
+        else if (tip === 4) {
+            // Jet Siprèm X (Nwa ak Koulè Mov fiti)
+            ctx.fillStyle = "#2e1a47"; ctx.strokeStyle = "#ff00ff";
+            ctx.beginPath(); ctx.moveTo(x, y - 32); ctx.lineTo(x - 15, y - 5); ctx.lineTo(x - 35, y + 15); ctx.lineTo(x, y + 5); ctx.lineTo(x + 35, y + 15); ctx.lineTo(x + 15, y - 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+        } 
+        else if (tip === 5) {
+            // Eroblack Titan (Gwo avyon blennde - Koulè Wouj/Nwa)
+            ctx.fillStyle = "#1a0000"; ctx.strokeStyle = "#ff0033";
+            ctx.beginPath(); ctx.moveTo(x, y - 35); ctx.lineTo(x - 18, y - 10); ctx.lineTo(x - 40, y + 12); ctx.lineTo(x - 12, y + 18); ctx.lineTo(x + 12, y + 18); ctx.lineTo(x + 40, y + 12); ctx.lineTo(x + 18, y - 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+            // Gwo kabin sirèn
+            ctx.fillStyle = "#ff0033"; ctx.beginPath(); ctx.arc(x, y - 5, 6, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+            return;
         }
+
+        // Ti kabin pilòt santral pou lòt yo
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(x, y - 5, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
+    function drawEnemy(x, y) {
+        ctx.save();
+        ctx.fillStyle = "#ff1a1a";
+        ctx.strokeStyle = "#4d0000";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y + 22);
+        ctx.lineTo(x - 26, y - 5);
+        ctx.lineTo(x - 8, y - 5);
+        ctx.lineTo(x, y - 12);
+        ctx.lineTo(x + 8, y - 5);
+        ctx.lineTo(x + 26, y - 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
         ctx.restore();
     }
 
@@ -258,85 +289,87 @@
         ctx.fillStyle = "#000b1a";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Background tèks anime
         ctx.font = "bold 22px Arial";
         bgTexts.forEach(t => {
-            ctx.fillStyle = "rgba(0, 255, 255, 0.08)";
+            ctx.fillStyle = "rgba(0, 255, 255, 0.06)";
             ctx.fillText("EROBLACK", t.x, t.y);
             t.y += t.s;
-            if(t.y > canvas.height) { 
-                t.y = -30; 
-                t.x = Math.random() * (canvas.width - 50); 
-            }
+            if(t.y > canvas.height) { t.y = -30; t.x = Math.random() * (canvas.width - 50); }
         });
 
-        drawFighter(player.x, player.y, false);
+        // Desine avyon jwè a selon chwa l la
+        drawPlayerJet(player.x, player.y, tipAvyon);
 
+        // Mizajou ak Desen Bal yo
         for (let i = bullets.length - 1; i >= 0; i--) {
             let b = bullets[i];
             b.y -= b.speed;
             
-            // Bèl efè lazè pou bal yo
             ctx.fillStyle = "#ffff00";
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 6;
             ctx.shadowColor = "#ffff00";
-            ctx.fillRect(b.x - 2, b.y, 4, 15);
-            ctx.shadowBlur = 0; // Reyasiyen sou zero
+            ctx.fillRect(b.x - 2, b.y, 4, 14);
+            ctx.shadowBlur = 0;
             
             if (b.y < 0) bullets.splice(i, 1);
         }
 
+        // Mizajou ak Desen Lènmi yo
         for (let i = enemies.length - 1; i >= 0; i--) {
             let en = enemies[i];
             en.y += en.speed;
-            drawFighter(en.x, en.y, true);
+            drawEnemy(en.x, en.y);
             
+            // Afiche kantite HP rete a ak koulè
             ctx.fillStyle = "#fff";
-            ctx.font = "bold 13px Arial";
+            ctx.font = "bold 12px Arial";
             ctx.textAlign = "center";
-            ctx.fillText(en.hp, en.x, en.y - 15);
+            ctx.fillText(en.hp, en.x, en.y - 12);
 
+            // Deteksyon kolizyon Bal ak Lènmi
             for (let j = bullets.length - 1; j >= 0; j--) {
                 let b = bullets[j];
-                if (Math.abs(b.x - en.x) < 25 && Math.abs(b.y - en.y) < 25) {
-                    en.hp--;
+                if (Math.abs(b.x - en.x) < 28 && Math.abs(b.y - en.y) < 25) {
+                    en.hp--; // Chak bal retire 1 HP
                     bullets.splice(j, 1);
+                    
                     if (en.hp <= 0) {
                         enemies.splice(i, 1);
                         score++;
                         enemiesFinished++;
                         document.getElementById('score').innerText = score;
-                        checkFinish();
+                        if (enemiesFinished >= TOTAL_ENEMIES) gameOver();
                     }
                     break;
                 }
             }
 
+            // Si avyon lènmi an soti nan ekran an
             if (en && en.y > canvas.height + 50) {
                 enemies.splice(i, 1);
                 enemiesFinished++;
-                checkFinish();
+                if (enemiesFinished >= TOTAL_ENEMIES) gameOver();
             }
 
-            if (en && Math.abs(player.x - en.x) < 28 && Math.abs(player.y - en.y) < 28) {
+            // Si lènmi an frape jwè a dirèkteman
+            if (en && Math.abs(player.x - en.x) < 30 && Math.abs(player.y - en.y) < 30) {
                 gameOver();
             }
         }
         requestAnimationFrame(update);
     }
 
-    function checkFinish() {
-        if (enemiesFinished >= TOTAL_ENEMIES) gameOver();
-    }
-
     function gameOver() {
         gameActive = false;
+        document.getElementById('hangar-ui').style.display = "none"; // Kache hangar a
         let won = score >= TARGET;
         let gain = won ? (mizFinal * 10) : 0;
         sendToApp("genyen", gain);
 
         let teksDyalog = won 
-            ? 'Kòmandan: "Ezekisyon pafè! Ou rache viktwa a epi ou sekirize kòb la!"' 
-            : 'Kòmandan: "Misyon echwe, yo te twòp pou nou! Al prepare w pou revanch lan."';
+            ? 'Kòmandan: "Ezekisyon pafè ak chanjman taktik yo! Ou sekirize kòb la!"' 
+            : 'Kòmandan: "Echèk! Eskwadwon lènmi an te twò pwisan. Al pare lòt estrateji!"';
 
         document.getElementById('modal').style.display = "flex";
         document.getElementById('modal-content').innerHTML = `
